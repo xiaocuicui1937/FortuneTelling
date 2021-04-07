@@ -11,6 +11,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import com.gnss.fortunetelling.bean.ListBean
 
@@ -19,16 +20,17 @@ class MingPanView @JvmOverloads constructor(context: Context?,
     defStyleAttr: Int = 0) : View(context, attrs, defStyleAttr) {
     private var mPaintLine = Paint()
     private val mTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-
+    private var mColor:Int=Color.RED
+    private var isClick:Boolean= true
     init {
         init()
     }
 
     private fun init() {
+
         //加载文本数据
         JsonParser.jsonParseWithSrc()
         initPaintWithLineAndAppName()
-        setTextPaint(Align.CENTER, Color.BLACK, 16f.dp, true)
 
     }
 
@@ -46,8 +48,8 @@ class MingPanView @JvmOverloads constructor(context: Context?,
         mTextPaint.isFakeBoldText = isBold
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
+    //TODO 新增点击事件 通过动态设置文字需要展示颜色，重新绘制从而改变了颜色
+    override fun onTouchEvent(event: MotionEvent): Boolean {
         //左边第一条竖线的横坐标x
         val width = width
         val lineVerticalLeftX = width / 4
@@ -58,7 +60,43 @@ class MingPanView @JvmOverloads constructor(context: Context?,
         val lineHorizontalTopY = height / 4
         val lineHorizontalCenterY = 2 * lineHorizontalTopY
         val lineHorizontalBottomY = 3 * lineHorizontalTopY
+        val rawX = event.x
+        val rawY = event.y
 
+        when(event.actionMasked){
+            MotionEvent.ACTION_UP -> {
+                //申位
+                if (rawX>0&&rawX<lineVerticalLeftX&&rawY>0&&rawY<lineHorizontalTopY){
+                    "点击了申位置".showToast()
+                    mColor = if (isClick){
+                        Color.GREEN
+                    }else{
+                        Color.RED
+                    }
+                    isClick = !isClick
+
+                    invalidate()
+                    return true
+                }
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+        //左边第一条竖线的横坐标x
+        val width = width
+        val lineVerticalLeftX = width / 4
+        val lineVerticalRightX = 3 * lineVerticalLeftX
+        val lineVerticalCenterX = 2 * lineVerticalLeftX
+        //上边第一台一条横线的纵坐标y
+        val height = height
+        val lineHorizontalTopY = height / 4
+        val lineHorizontalCenterY = 2 * lineHorizontalTopY
+        val lineHorizontalBottomY = 3 * lineHorizontalTopY
         //vertical
         drawVerticalLines(canvas,
             lineVerticalLeftX,
@@ -82,10 +120,10 @@ class MingPanView @JvmOverloads constructor(context: Context?,
 
         //top top left show-----------------------------
         drawArea(canvas, 0f, 0f, lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadShen())
-        drawArea(canvas, lineVerticalLeftX.toFloat(), 0f, lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadQiu())
+        drawArea(canvas, lineVerticalLeftX.toFloat(), 0f, lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadYou(),mColor)
         drawArea(canvas, lineVerticalCenterX.toFloat(), 0f, lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadXu())
         drawArea(canvas, lineVerticalRightX.toFloat(), 0f, lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadHai())
-//        second
+        //        second
         drawArea(canvas, 0f, lineHorizontalTopY.toFloat(), lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadWei())
         drawArea(canvas, lineVerticalRightX.toFloat(), lineHorizontalTopY.toFloat(), lineHorizontalTopY, lineVerticalLeftX,JsonParser.loadZi())
         //thrid
@@ -115,14 +153,15 @@ class MingPanView @JvmOverloads constructor(context: Context?,
         //------------------------------------end-----------------
     }
 
-    private fun drawArea(canvas: Canvas, offsetX: Float, offsetY: Float, lineHorizontalTopY: Int, lineVerticalLeftX: Int,json:ListBean) {
+    private fun drawArea(canvas: Canvas, offsetX: Float, offsetY: Float, lineHorizontalTopY: Int, lineVerticalLeftX: Int,json:ListBean,color:Int=Color.RED) {
+
         setTextPaint(Align.CENTER, Color.RED, 12f.dp, true)
         val width = mTextPaint.measureText("耗")
 
         for (index in json.stars.indices){
             val star = json.stars[index]
             val ws = width * index
-            drawAreaTop(canvas, star.big, star.small, offsetX+ws, offsetY, Color.RED)
+            drawAreaTop(canvas, star.big, star.small, offsetX+ws, offsetY, color)
         }
         //bottom left show
         drawAreaBottomLeft(canvas, json.bottomLeft.toTypedArray(), offsetX, offsetY, lineHorizontalTopY)
@@ -266,6 +305,7 @@ class MingPanView @JvmOverloads constructor(context: Context?,
     }
 
     private fun centerStr(canvas: Canvas, width: Float, lineHorizontalTopY: Int) {
+        setTextPaint(Align.CENTER, Color.BLACK, 16f.dp, true)
         val appName = resources.getString(R.string.app_name)
         canvas.drawText(appName,
             width / 2,

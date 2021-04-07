@@ -3,6 +3,7 @@ package com.gnss.fortunetelling
 import android.app.Application
 import android.content.res.Resources
 import android.util.TypedValue
+import android.widget.Toast
 import com.google.gson.Gson
 
 /**
@@ -16,5 +17,9 @@ val Float.dp
 
 inline fun <reified T> Gson.fromJson(json: String) = fromJson(json, T::class.java)
 
-val Application.app
-    get() = this
+
+
+fun String.showToast(duration: Int = Toast.LENGTH_SHORT){
+    //MyApplication 这是一个直接获取全局context的类
+    Toast.makeText(App.mContext,this,Toast.LENGTH_SHORT).show()
+}
